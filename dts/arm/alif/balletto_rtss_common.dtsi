@@ -698,10 +698,6 @@
 				status = "disabled";
 			};
 		};
-		ieee802154: ieee802154 {
-			compatible = "alif,ahi-ieee802154";
-			status = "disabled";
-		};
 
 		adc0: adc0@49020000{
 			compatible = "alif,adc";
@@ -809,7 +805,7 @@
 			status = "disabled";
 		};
 
-		lpcmp: lpcmp@1A60A03C {
+		lpcmp: lpcmp@1a60a03c {
 			compatible = "alif,cmp";
 			reg = <0x1A60A03C 0x10>,
 				  <0x1A60A03C 0x10>;
@@ -963,16 +959,6 @@
 			};
 		};
 
-		rng: rng {
-			compatible = "alif,secure-enclave-trng";
-			status = "okay";
-		};
-		se_service: se_service {
-			compatible = "alif,secure-enclave-services";
-			mhuv2-send-node = <&seservice0s>;
-			mhuv2-recv-node = <&seservice0r>;
-			status = "okay";
-		};
 		mram_flash: mram_flash@80000000 {
 			compatible = "alif,mram-flash-controller";
 			/* Usable MRAM size for applications is 1824 KB */
@@ -1043,10 +1029,8 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,sram = &dtcm;
 		zephyr,dtcm = &dtcm;
-		zephyr,ieee802154 = &ieee802154;
 		zephyr,hci-uart = &uart_hci;
 		zephyr,ahi-uart = &uart_ahi;
-		zephyr,entropy = &rng;
 		zephyr,display = &cdc200;
 	};
 
@@ -1128,6 +1112,23 @@
 };
 
 &{/} {
+	se_service: se_service {
+		compatible = "alif,secure-enclave-services";
+		mhuv2-send-node = <&seservice0s>;
+		mhuv2-recv-node = <&seservice0r>;
+		status = "okay";
+	};
+
+	ieee802154: ieee802154 {
+		compatible = "alif,ahi-ieee802154";
+		status = "disabled";
+	};
+
+	rng: rng {
+		compatible = "alif,secure-enclave-trng";
+		status = "okay";
+	};
+
 	power-states {
 		off: off {
 			compatible = "zephyr,power-state";
@@ -1146,5 +1147,10 @@
 			reg = <0>;
 			cpu-power-states = <&off>;
 		};
+	};
+
+	chosen {
+		zephyr,ieee802154 = &ieee802154;
+		zephyr,entropy = &rng;
 	};
 };
