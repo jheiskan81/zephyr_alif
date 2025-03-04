@@ -14,70 +14,16 @@ config MAIN_STACK_SIZE
 config BT_BUF_ACL_RX_SIZE
 	range 251 65535
 	default 251
-	help
-	  Maximum support ACL size of data packets sent from the Controller to
-	  the Host. This value does not include the HCI ACL header.
-	  In a combined Host and Controller build the buffer sizes in both the
-	  Host and the Controller will use this value for buffer sizes, and
-	  therefore Controller to Host flow Controller is not needed.
-	  In a Host only build with Controller to Host flow control enabled
-	  the Host will inform the Controller about the maximum ACL data size it
-	  can send by setting this value in the Host Buffer Size command.
-	  If Controller to Host flow control is not enabled then the Controller
-	  can assume the Host has infinite buffer size so this value should then
-	  be set to something that is guaranteed the Controller will not exceed
-	  or the data packets will be dropped.
-	  In a Controller only build this will determine the maximum ACL size
-	  that the Controller will send to the Host.
-	  The Host supports reassembling of L2CAP PDUs from ACL data packets,
-	  but the maximum supported L2CAP PDU size is limited by the maximum
-	  supported ACL size.
-	  This means the maximum L2CAP PDU MTU is restricted by the maximum ACL
-	  size subtracting the 4 byte header of an L2CAP PDU.
-	  When using L2CAP Connection oriented Channels without segmentation
-	  then the L2CAP SDU MTU is also restricted by the maximum ACL size
-	  subtracting the 4 Byte header of an L2CAP PDU plus the 2 byte header
-	  of an L2CAP SDU.
-
-	  Note: Alif Semiconductor's LL stack does not support fragmentation so it
-	  mandates the minimum value of 251!
-
-	  An L2CAP PDU is also referred to as an L2CAP basic frame or B-frame.
-	  An L2CAP SDU is also referred to as an L2CAP Credit-based frame or
-	  K-frame.
 
 config BT_BUF_EVT_RX_COUNT
 	default 20 if (BT_MESH && !(BT_BUF_EVT_DISCARDABLE_COUNT > 0))
 	default 10
 	range 10 255
-	help
-	  Number of buffers available for incoming HCI events from the
-	  Controller.
 
 config BT_BUF_ACL_RX_COUNT
 	default 10
 	range 6 255
-	help
-	  Number or incoming ACL data buffers sent from the Controller to the
-	  Host.
-	  In a combined Host and Controller build the buffers are shared and
-	  therefore Controller to Host flow control is not needed.
-	  In a Host only build with Controller to Host flow control enabled
-	  the Host will inform the Controller about the maximum number of
-	  buffers by setting this value in the Host Buffer Size command.
-	  When Controller to Host flow control is not enabled the Controller
-	  can assume that the Host has infinite amount of buffers.
 
 config BT_BUF_ACL_TX_COUNT
 	default 10
 	range 6 255
-	help
-	  Number of outgoing ACL data buffers sent from the Host to the
-	  Controller. This determines the maximum amount of data packets the
-	  Host can have queued in the Controller before waiting for the
-	  to notify the Host that more packets can be queued with the Number of
-	  Completed Packets event.
-	  The buffers are shared between all of the connections and the Host
-	  determines how to divide the buffers between the connections.
-	  The Controller will return this value in the HCI LE Read Buffer Size
-	  command response.
