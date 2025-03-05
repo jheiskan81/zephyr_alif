@@ -76,8 +76,6 @@
 #define M55HP_CFG_HP_DMA_SEL		(M55HP_CFG_HP_CFG_BASE + 0xC)
 #define M55HP_CFG_HP_CLK_ENA		(M55HP_CFG_HP_CFG_BASE + 0x10)
 
-#if !defined(CONFIG_SOC_E7_DK_APSS)
-
 #define __SAUREGION_PRESENT       1U        /* SAU regions present */
 #define __FPU_PRESENT             CONFIG_CPU_HAS_FPU
 #define __DSP_PRESENT             1U        /* DSP extension present */
@@ -584,8 +582,6 @@ typedef enum IRQn {
 } CMSIS_IRQn_Type;
 
 #define __Vendor_SysTickConfig         0 /* Default to standard SysTick */
-
-#endif /* CONFIG_SOC_E7_DK_APSS */
 
 #include <cmsis_core_m_defaults.h>
 
