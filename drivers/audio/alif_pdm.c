@@ -13,7 +13,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include "alif_pdm_reg.h"
 
-#define CONFIG_PDM_INIT_PRIORITY 40
+#define CONF_PDM_INIT_PRIORITY 40
 
 LOG_MODULE_REGISTER(alif_pdm, 3);
 
@@ -518,7 +518,7 @@ static const struct _dmic_ops dmic_alif_pdm_api = {
 		irq_enable(DT_INST_IRQN(i));                                                       \
 	}                                                                                          \
 	DEVICE_DT_INST_DEFINE(i, pdm_initialize, NULL, &dmic_alif_pdm_data,                        \
-			      &dmic_alif_pdm_cfg_##i, POST_KERNEL, CONFIG_PDM_INIT_PRIORITY,       \
+			      &dmic_alif_pdm_cfg_##i, POST_KERNEL, CONF_PDM_INIT_PRIORITY,       \
 			      &dmic_alif_pdm_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PDM_INIT)

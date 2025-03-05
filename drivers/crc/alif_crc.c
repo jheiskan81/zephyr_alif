@@ -15,7 +15,7 @@
 
 uint32_t reg_value;
 
-#define CONFIG_CRC_INIT_PRIORITY	40
+#define CONF_CRC_INIT_PRIORITY	40
 
 /**
  * @fn		crc_bit_reflect(uint32_t input)
@@ -449,7 +449,6 @@ static int crc_initialize(const struct device *dev)
 	 };			\
 	DEVICE_DT_INST_DEFINE(n, crc_initialize, NULL, &data##n, \
 						  &config_##n, POST_KERNEL,			\
-						  CONFIG_CRC_INIT_PRIORITY, &crc_api_funcs);
+						  CONF_CRC_INIT_PRIORITY, &crc_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(CRC_INIT)
-
