@@ -1111,7 +1111,7 @@
 
 		reserved_for_se: partition@1C8000 {
 			label = "SE-reserved";
-			reg = <0x001C5828 DT_SIZE_K(224)>;
+			reg = <0x001C8000 DT_SIZE_K(224)>;
 		};
 	};
 };
