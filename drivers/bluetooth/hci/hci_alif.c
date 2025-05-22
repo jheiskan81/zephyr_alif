@@ -567,4 +567,4 @@ static int bt_uart_init(void)
 	return 0;
 }
 
-SYS_INIT(bt_uart_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+SYS_INIT(bt_uart_init, POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY);
