@@ -26,17 +26,22 @@ struct counter_dw_config {
 struct counter_dw_data {
 	counter_alarm_callback_t alarm_cb;
 	void *user_data;
+	uint32_t alarm_ticks;
+	uint32_t ccr_reg_value;
+	uint32_t cold_boot_done;
 };
-
 
 static int counter_dw_start(const struct device *dev)
 {
 	const struct counter_dw_config *config = dev->config;
-	uint32_t reg_value;
+	struct counter_dw_data *data = dev->data;
 
-	reg_value = read_ccr(config->base_address);
+	if(data->cold_boot_done != 0xfadefade) {
+		data->ccr_reg_value = read_ccr(config->base_address);
+		data->cold_boot_done = 0xfadefade;
+	}
 
-	if ((reg_value & (1 << DW_RTC_CCR_EN))) {
+	if ((data->ccr_reg_value & (1 << DW_RTC_CCR_EN))) {
 		return -EALREADY;
 	}
 
@@ -44,16 +49,16 @@ static int counter_dw_start(const struct device *dev)
 
 	if (config->prescaler) {
 		write_cpsr(config->prescaler, config->base_address);
-		reg_value |= (1 << DW_RTC_CCR_PSCLR_EN);
+		data->ccr_reg_value |= (1 << DW_RTC_CCR_PSCLR_EN);
 	}
 
 	if (config->wrap_enable) {
-		reg_value |= (1 << DW_RTC_CCR_WEN);
+		data->ccr_reg_value |= (1 << DW_RTC_CCR_WEN);
 	}
 
-	reg_value |= (1 << DW_RTC_CCR_EN);
-	write_ccr(reg_value, config->base_address);
-	LOG_DBG("%p Counter started", dev);
+	data->ccr_reg_value |= (1 << DW_RTC_CCR_EN);
+	write_ccr(data->ccr_reg_value, config->base_address);
+	//LOG_DBG("%p Counter started", dev);
 
 	return 0;
 }
@@ -61,18 +66,16 @@ static int counter_dw_start(const struct device *dev)
 static int counter_dw_stop(const struct device *dev)
 {
 	const struct counter_dw_config *config = dev->config;
-	uint32_t reg_value;
+	struct counter_dw_data *data = dev->data;
 
-	reg_value = read_ccr(config->base_address);
-
-	if (!(reg_value & (1 << DW_RTC_CCR_EN))) {
+	if (!(data->ccr_reg_value & (1 << DW_RTC_CCR_EN))) {
 		LOG_DBG("%p Counter already in stopped state", dev);
 		return 0;
 	}
 
-	reg_value &= ~(1 << DW_RTC_CCR_EN);
-	write_ccr(reg_value, config->base_address);
-	LOG_DBG("%p Counter stopped", dev);
+	data->ccr_reg_value &= ~(1 << DW_RTC_CCR_EN);
+	write_ccr(data->ccr_reg_value, config->base_address);
+	//LOG_DBG("%p Counter stopped", dev);
 
 	return 0;
 }
@@ -90,8 +93,6 @@ static int counter_dw_set_alarm(const struct device *dev, uint8_t chan_id,
 {
 	const struct counter_dw_config *config = dev->config;
 	struct counter_dw_data *data = dev->data;
-	uint32_t reg_value;
-	uint32_t ticks;
 
 	if (chan_id != 0) {
 		LOG_ERR("Invalid channel id %u", chan_id);
@@ -102,24 +103,25 @@ static int counter_dw_set_alarm(const struct device *dev, uint8_t chan_id,
 		return -EBUSY;
 	}
 
-	if (alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE) {
-		ticks = alarm_cfg->ticks;
-	} else {
-		ticks = read_ccvr(config->base_address) + alarm_cfg->ticks;
-	}
+	// if (alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE) {
+	// 	ticks = alarm_cfg->ticks;
+	// } else {
+	// 	ticks = read_ccvr(config->base_address) + alarm_cfg->ticks;
+	// }
+	data->alarm_ticks = alarm_cfg->ticks;
 
-	write_cmr(ticks, config->base_address);
+	write_clr(0, config->base_address);
+	write_cmr(alarm_cfg->ticks, config->base_address);
 
 	data->alarm_cb = alarm_cfg->callback;
 	data->user_data = alarm_cfg->user_data;
 
-	reg_value = read_ccr(config->base_address);
-	reg_value |= (1 << DW_RTC_CCR_IEN);
-	reg_value &= ~(1 << DW_RTC_CCR_MASK);
+	data->ccr_reg_value |= (1 << DW_RTC_CCR_IEN);
+	data->ccr_reg_value &= ~(1 << DW_RTC_CCR_MASK);
 
-	write_ccr(reg_value, config->base_address);
+	write_ccr(data->ccr_reg_value, config->base_address);
 
-	LOG_DBG("%p Counter alarm set to %u ticks", dev, alarm_cfg->ticks);
+	//LOG_DBG("%p Counter alarm set to %u ticks", dev, alarm_cfg->ticks);
 
 	return 0;
 }
@@ -128,21 +130,21 @@ static int counter_dw_cancel_alarm(const struct device *dev, uint8_t chan_id)
 {
 	const struct counter_dw_config *config = dev->config;
 	struct counter_dw_data *data = dev->data;
-	uint32_t reg_value;
 
 	if (chan_id != 0) {
 		LOG_ERR("Invalid channel id %u", chan_id);
 		return -ENOTSUP;
 	}
 
-	reg_value = read_ccr(config->base_address);
-	reg_value &= ~(1 << DW_RTC_CCR_IEN);
+	if (data->ccr_reg_value & (1 << DW_RTC_CCR_IEN)) {
+		data->ccr_reg_value &= ~(1 << DW_RTC_CCR_IEN);
+		write_ccr(data->ccr_reg_value, config->base_address);
+	}
 
-	write_ccr(reg_value, config->base_address);
 	data->alarm_cb = NULL;
 	data->user_data = NULL;
 
-	LOG_DBG("%p Counter alarm canceled", dev);
+	//LOG_DBG("%p Counter alarm canceled", dev);
 
 	return 0;
 }
@@ -160,16 +162,14 @@ static void counter_dw_isr(const struct device *dev)
 	struct counter_dw_data *data = dev->data;
 	counter_alarm_callback_t alarm_cb = data->alarm_cb;
 	uint32_t ticks;
-	uint32_t reg_value;
 
-	LOG_DBG("%p Counter ISR", dev);
+	//LOG_DBG("%p Counter ISR", dev);
 
 	/* Single alarm is supported, disable interrupt and callback */
 	clear_interrupts(config->base_address);
-	reg_value = read_ccr(config->base_address);
-	reg_value &= ~(1 << DW_RTC_CCR_IEN);
+	data->ccr_reg_value &= ~(1 << DW_RTC_CCR_IEN);
 
-	write_ccr(reg_value, config->base_address);
+	write_ccr(data->ccr_reg_value, config->base_address);
 
 	counter_dw_get_value(dev, &ticks);
 
@@ -191,17 +191,18 @@ static const struct counter_driver_api counter_dw_api = {
 static int counter_dw_init(const struct device *dev)
 {
 	const struct counter_dw_config *config = dev->config;
+	struct counter_dw_data *data = dev->data;
 
-	counter_dw_stop(dev);
+	data->alarm_cb = NULL;
 	config->config_func();
-	LOG_DBG("Designware RTC driver initialized on device: %p", dev);
+	//LOG_DBG("Designware RTC driver initialized on device: %p", dev);
 	return 0;
 }
 
 #define COUNTER_DW_INIT(inst)							\
 	static void counter_dw_irq_config_##inst(void);				\
 										\
-	static struct counter_dw_data counter_dw_dev_data_##inst;		\
+	static struct counter_dw_data counter_dw_dev_data_##inst __attribute__((noinit));		\
 										\
 	static struct counter_dw_config counter_dw_dev_config_##inst = {	\
 		.info = {							\
