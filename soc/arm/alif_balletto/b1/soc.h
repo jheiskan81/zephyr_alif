@@ -373,6 +373,14 @@ typedef enum IRQn {
 
 #define __Vendor_SysTickConfig         0 /* Default to standard SysTick */
 #include <cmsis_core_m_defaults.h>
+#if defined(CONFIG_PM)
+#define VBAT_RESUME_ENABLED 0xcafecafe
+/* Overwrite weak definition */
+void z_prep_soc_early_init(void);
+void balletto_b1_restore_systop_host(void);
+bool balletto_vbat_resume_enabled(void);
+void balletto_vbat_resume_enable(void);
+#endif
 
 
 #endif /* _SOC_H_ */

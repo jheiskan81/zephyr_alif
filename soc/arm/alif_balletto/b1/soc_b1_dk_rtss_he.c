@@ -22,6 +22,54 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
+#if defined(CONFIG_PM)
+#define HOST_SYSTOP_PWR_REQ_LOGIC_ON_MEM_ON 0x12
+static uint32_t host_bsys_pwr_req __attribute__((noinit));
+
+uint32_t vbat_resume __attribute__((noinit));
+
+void z_prep_soc_early_init(void)
+{
+	/*store Systop and force HOST_SYSTOP_PWR_REQ_LOGIC_ON_MEM_ON*/
+	host_bsys_pwr_req = sys_read32(HOST_BSYS_PWR_REQ);
+	sys_write32(host_bsys_pwr_req | HOST_SYSTOP_PWR_REQ_LOGIC_ON_MEM_ON, HOST_BSYS_PWR_REQ);
+
+	/* Enable ICACHE */
+	sys_cache_instr_enable();
+
+	/* Enable DCACHE */
+	sys_cache_data_enable();
+}
+
+void balletto_b1_restore_systop_host(void)
+{
+	sys_write32(host_bsys_pwr_req, HOST_BSYS_PWR_REQ);
+}
+#endif
+
+bool balletto_vbat_resume_enabled(void)
+{
+	if (vbat_resume == VBAT_RESUME_ENABLED) {
+		return true;
+	}
+	return false;
+}
+
+void balletto_vbat_resume_enable(void)
+{
+	vbat_resume = VBAT_RESUME_ENABLED;
+}
+
+static bool balletto_do_dcdc_fix(void)
+{
+#if defined(CONFIG_PM)
+	if (vbat_resume == VBAT_RESUME_ENABLED) {
+		return false;
+	}
+#endif
+return true;
+}
+
 /**
  * @brief Perform basic hardware initialization at boot.
  *
@@ -29,11 +77,13 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
  */
 static int balletto_b1_dk_rtss_he_init(void)
 {
-	/* Enable ICACHE */
-	sys_cache_instr_enable();
+	if (!IS_ENABLED(CONFIG_PM)) {
+		/* Enable ICACHE */
+		sys_cache_instr_enable();
 
-	/* Enable DCACHE */
-	sys_cache_data_enable();
+		/* Enable DCACHE */
+		sys_cache_data_enable();
+	}
 
 	/* enable all UART[5-0] modules */
 	/* select UART[5-0]_SCLK as SYST_PCLK clock. */
@@ -113,12 +163,13 @@ static int balletto_b1_dk_rtss_he_init(void)
 	}
 #endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(timer1), okay) */
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(snps_dw_timers) */
-
-	/* A0-A4 DCDC fix
-	 * This is needed to clean BLE transmissions.
-	 */
-	sys_write32(0x0a004411, 0x1a60a034);
-	sys_write32(0x1e11e701, 0x1a60a030);
+	if (balletto_do_dcdc_fix()) {
+		/* A0-A4 DCDC fix
+		 * This is needed to clean BLE transmissions.
+		 */
+		sys_write32(0x0a004411, 0x1a60a034);
+		sys_write32(0x1e11e701, 0x1a60a030);
+	}
 
 	/* RTC Clk Enable */
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(rtc0), okay)
