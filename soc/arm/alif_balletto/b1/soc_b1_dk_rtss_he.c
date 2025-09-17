@@ -22,6 +22,35 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
+#if defined(CONFIG_PM)
+#define VBAT_RESUME_ENABLED 0xcafecafe
+
+uint32_t vbat_resume __attribute__((noinit));
+
+void balletto_vbat_resume_enable(void)
+{
+	vbat_resume = VBAT_RESUME_ENABLED;
+}
+
+bool balletto_vbat_resume_enabled(void)
+{
+	if (vbat_resume == VBAT_RESUME_ENABLED) {
+		return true;
+	}
+	return false;
+}
+#endif
+
+static bool balletto_do_dcdc_fix(void)
+{
+#if defined(CONFIG_PM)
+	if (vbat_resume == VBAT_RESUME_ENABLED) {
+		return false;
+	}
+#endif
+return true;
+}
+
 /**
  * @brief Perform basic hardware initialization at boot.
  *
@@ -107,12 +136,13 @@ static int balletto_b1_dk_rtss_he_init(void)
 	}
 #endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(timer1), okay) */
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(snps_dw_timers) */
-
-	/* A0-A4 DCDC fix
-	 * This is needed to clean BLE transmissions.
-	 */
-	sys_write32(0x0a004411, 0x1a60a034);
-	sys_write32(0x1e11e701, 0x1a60a030);
+	if (balletto_do_dcdc_fix()) {
+		/* A0-A4 DCDC fix
+		 * This is needed to clean BLE transmissions.
+		 */
+		sys_write32(0x0a004411, 0x1a60a034);
+		sys_write32(0x1e11e701, 0x1a60a030);
+	}
 
 	/* RTC Clk Enable */
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(rtc0), okay)
