@@ -36,6 +36,8 @@ if OSPI_FLASH_IS25WX
 
 	config FLASH_ADDRESS_IN_SINGLE_FIFO_LOCATION
 	bool "IS25WX Flash Setup with Single Address mode"
+	default y if SOC_SERIES_BALLETTO_B1
+	default y if SOC_SERIES_ENSEMBLE_E1C
 	help
 	 Enables Single Address mode while setting up IS25Wx Flash.
 
