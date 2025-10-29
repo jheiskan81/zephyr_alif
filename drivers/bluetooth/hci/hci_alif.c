@@ -43,7 +43,7 @@ LOG_MODULE_REGISTER(bt_driver);
 #define H4_ISO  0x05
 
 /* Define appropriate timeouts */
-#define TX_TIMEOUT_US 200 /* 200us */
+#define TX_TIMEOUT_US 20000 /* 20000us */
 #define RX_TIMEOUT_US 0   /* No delay */
 
 /* UART DMA request numbers from board-specific overlay */
