@@ -20,6 +20,8 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 #define HOST_SYSTOP_PWR_REQ_LOGIC_ON_MEM_ON 0x12
 
 static bool balletto_do_dcdc_fix(void);
+#define ALIF_B1_SOC_RUN_PROFILE_PRIORITY 2
+#define ALIF_B1_SOC_INIT_PRIORITY 3
 
 /**
  * Set the RUN profile parameters for this application.
@@ -63,17 +65,12 @@ static int pm_set_run_params(void)
 static int soc_run_profile(void)
 {
 	int ret;
-	uint32_t host_bsys_pwr_req = sys_read32(HOST_BSYS_PWR_REQ);
-
-	sys_write32(host_bsys_pwr_req | HOST_SYSTOP_PWR_REQ_LOGIC_ON_MEM_ON, HOST_BSYS_PWR_REQ);
 
 	ret = pm_set_run_params();
 	if (ret) {
 		LOG_ERR("ERROR: run profile");
 		return -1;
 	}
-
-	sys_write32(host_bsys_pwr_req, HOST_BSYS_PWR_REQ);
 
 	if (IS_ENABLED(CONFIG_SOC_B1_DK_RTSS_HE) && balletto_do_dcdc_fix()) {
 		/* A0-A4 DCDC fix
@@ -87,7 +84,8 @@ static int soc_run_profile(void)
 
 	return 0;
 }
-SYS_INIT(soc_run_profile, PRE_KERNEL_1, 2); /*CONFIG_SE_SERVICE_INIT_PRIORITY + 1 */
+SYS_INIT(soc_run_profile, PRE_KERNEL_1,
+	 ALIF_B1_SOC_RUN_PROFILE_PRIORITY); /*CONFIG_SE_SERVICE_INIT_PRIORITY + 1 */
 
 #if defined(CONFIG_PM)
 #define VBAT_RESUME_ENABLED 0xcafecafe
@@ -330,4 +328,4 @@ void sys_arch_reboot(int type)
 }
 #endif
 
-SYS_INIT(balletto_b1_dk_rtss_he_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(balletto_b1_dk_rtss_he_init, PRE_KERNEL_1, ALIF_B1_SOC_INIT_PRIORITY);
