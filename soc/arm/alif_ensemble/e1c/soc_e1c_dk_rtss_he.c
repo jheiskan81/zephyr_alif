@@ -15,6 +15,9 @@
 #include <zephyr/cache.h>
 
 #define HOST_SYSTOP_PWR_REQ_LOGIC_ON_MEM_ON 0x12
+#define ALIF_E1C_SOC_RUN_PROFILE_PRIORITY 2
+#define ALIF_E1C_SOC_INIT_PRIORITY 3
+
 
 /**
  * Set the RUN profile parameters for this application.
@@ -58,20 +61,16 @@ static int pm_set_run_params(void)
 static int soc_run_profile(void)
 {
 	int ret;
-	uint32_t host_bsys_pwr_req = sys_read32(HOST_BSYS_PWR_REQ);
-
-	sys_write32(host_bsys_pwr_req | HOST_SYSTOP_PWR_REQ_LOGIC_ON_MEM_ON, HOST_BSYS_PWR_REQ);
 
 	ret = pm_set_run_params();
 	if (ret) {
 		return ret;
 	}
 
-	sys_write32(host_bsys_pwr_req, HOST_BSYS_PWR_REQ);
-
 	return 0;
 }
-SYS_INIT(soc_run_profile, PRE_KERNEL_1, 2); /*CONFIG_SE_SERVICE_INIT_PRIORITY + 1 */
+SYS_INIT(soc_run_profile, PRE_KERNEL_1,
+	 ALIF_E1C_SOC_RUN_PROFILE_PRIORITY); /*CONFIG_SE_SERVICE_INIT_PRIORITY + 1 */
 
 /**
  * @brief Perform basic hardware initialization at boot.
@@ -234,4 +233,4 @@ void sys_arch_reboot(int type)
 }
 #endif
 
-SYS_INIT(ensemble_e1c_dk_rtss_he_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(ensemble_e1c_dk_rtss_he_init, PRE_KERNEL_1, ALIF_E1C_SOC_INIT_PRIORITY);
