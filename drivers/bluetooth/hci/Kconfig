@@ -187,7 +187,6 @@ config BT_ALIF
 	bool
 	default y
 	depends on DT_HAS_ALIF_BT_HCI_ENABLED
-	select HAS_BT_CTLR
 	help
 	  "Alif Semiconductor HCI bluetooth interface"
 
