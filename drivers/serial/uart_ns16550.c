@@ -2160,6 +2160,13 @@ static int uart_ns16550_pm_action(const struct device *dev, enum pm_device_actio
 	case PM_DEVICE_ACTION_TURN_OFF:
 	case PM_DEVICE_ACTION_SUSPEND:
 #ifdef CONFIG_UART_NS16550_LINE_CTRL
+		const struct uart_ns16550_device_config *const config = dev->config;
+		struct uart_ns16550_dev_data * const dev_data = dev->data;
+
+		if (dev_data->rts_ctrl && (ns16550_inbyte(config, RFL(dev))) != 0) {
+			return -EBUSY;
+		}
+
 		/* Set break condition */
 		uart_ns16550_line_ctrl_set(dev, UART_LINE_CTRL_BRK, 1);
 		uart_ns16550_line_ctrl_set(dev, UART_LINE_CTRL_RTS, 0);
