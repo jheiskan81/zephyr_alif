@@ -364,17 +364,15 @@ static uint32_t alif_cls_ie_element_update(uint8_t *header_ptr, uint16_t length,
 		tx_timestamp);
 
 	/* Calculate phase from 15ms since now */
-	tx_timestamp += (CSL_PHASE_DELAY_US + CSL_PHASE_TICK_US);
+	tx_timestamp += (CSL_PHASE_TX_TS_UPDATE);
 	if (phase > CSL_PERIOD_DELAY) {
 		phase -= CSL_PERIOD_DELAY;
 	} else {
 		uint16_t delta_phase = CSL_PERIOD_DELAY - phase;
-
-		if (delta_phase == 0) {
-			delta_phase += 1;
-			tx_timestamp += CSL_PHASE_TICK_US;
-		}
 		phase = (period - delta_phase);
+		if (delta_phase == 0) {
+			phase = period;
+		}
 	}
 	LOG_DBG("CSL phase %u tx time %u", phase, tx_timestamp);
 	sys_put_le16(phase, csl_ie.content_ptr);
@@ -686,7 +684,6 @@ static void alif_rx_thread(void *arg1, void *arg2, void *arg3)
 			} else if (rx_frame->status == ALIF_MAC154_STATUS_TIMER_SYNCH) {
 				if (IS_ENABLED(CONFIG_NET_L2_OPENTHREAD)) {
 					platformAlarmInit();
-					LOG_DBG("Platform timer synch");
 				}
 			}
 			goto process_done;
