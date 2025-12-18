@@ -53,8 +53,12 @@ void platformAlarmInit(void)
 	time_offset_us = 0;
 	time_offset_ms = 0;
 #if defined(CONFIG_NET_PKT_TXTIME)
-	time_offset_us =
-		(int32_t)((int64_t)otPlatAlarmMicroGetNow() - (uint32_t)otPlatRadioGetNow(NULL));
+	uint32_t radio_ts, plat_time;
+
+	radio_ts = (uint32_t) otPlatRadioGetNow(NULL);
+	plat_time = (uint32_t) k_ticks_to_us_floor64(k_uptime_ticks());
+
+	time_offset_us = (int32_t)((int64_t)plat_time - radio_ts);
 	time_offset_ms = time_offset_us / 1000;
 #endif
 }
